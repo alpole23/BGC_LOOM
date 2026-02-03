@@ -19,22 +19,78 @@ BGC-LOOM is a Nextflow pipeline for comprehensive analysis of biosynthetic gene 
 - **Interactive HTML report** with BGC statistics, taxonomy distribution, and GCF visualization
 - **HPC support** with SLURM profile for cluster execution
 
-## Quick Start
+## Installation
+
+### Option 1: Clone with Git (recommended)
 
 ```bash
-# Install dependencies
+git clone https://github.com/alpole23/bgc-loom.git
+cd bgc-loom
+```
+
+### Option 2: Download ZIP
+
+1. Click the green **Code** button on GitHub
+2. Select **Download ZIP**
+3. Extract and enter the directory:
+   ```bash
+   unzip bgc-loom-main.zip
+   cd bgc-loom-main
+   ```
+
+### Setup Environment
+
+```bash
+# Create conda environment with Nextflow
 conda create -n nextflow -c conda-forge nextflow
 conda activate nextflow
 
+# Verify installation
+nextflow -version
+```
+
+## Quick Start
+
+### Local Execution
+
+```bash
 # Run on a bacterial taxon
 nextflow run main.nf --taxon "Streptomyces coelicolor"
 
 # Run with clustering
-nextflow run main.nf --taxon "Pantoea" --clustering bigscape
+nextflow run main.nf --taxon "Pantoea"
 
 # Resume a previous run
 nextflow run main.nf -resume
 ```
+
+### SLURM Cluster Execution
+
+```bash
+# Option 1: Direct execution with SLURM profile
+nextflow run main.nf -profile slurm --taxon "Streptomyces"
+
+# Option 2: Submit via sbatch script
+sbatch submit_slurm.sh "Streptomyces"
+
+# Monitor progress
+./check_progress.sh
+
+# Watch mode (auto-refresh every 10s)
+./check_progress.sh -w
+```
+
+**Before running on SLURM**, edit `submit_slurm.sh` to configure:
+- Partition name (`#SBATCH -p`)
+- Email for notifications (`#SBATCH --mail-user`)
+- Module loads for your cluster
+
+The SLURM profile automatically allocates:
+| Process | Memory | Time |
+|---------|--------|------|
+| antiSMASH | 8 GB | 2h |
+| BiG-SCAPE | 64 GB | 8h |
+| GTDB-Tk | 128 GB | 24h |
 
 ## Requirements
 
@@ -169,7 +225,7 @@ For SLURM clusters:
 nextflow run main.nf -profile slurm --taxon "Streptomyces"
 
 # Via sbatch
-sbatch submit_slurm.sh "Streptomyces" bigscape
+sbatch submit_slurm.sh "Streptomyces"
 ```
 
 The SLURM profile automatically allocates appropriate resources:
