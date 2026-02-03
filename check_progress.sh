@@ -32,18 +32,18 @@ LOG_FILE=".nextflow.log"
 
 # ----------------Functions-----------------------
 print_header() {
-    echo "╔════════════════════════════════════════════════════════════════════════╗"
-    echo "║                     BGC-LOOM Pipeline Progress                         ║"
-    echo "╠════════════════════════════════════════════════════════════════════════╣"
-    printf "║  %-70s  ║\n" "$(date)"
-    echo "╚════════════════════════════════════════════════════════════════════════╝"
+    echo "╔═════════════════════════════════════════════════════════════════════════════════════════╗"
+    echo "║                             BGC-LOOM Pipeline Progress                                  ║"
+    echo "╠═════════════════════════════════════════════════════════════════════════════════════════╣"
+    printf "║  %-86s ║\n" "$(date)"
+    echo "╚═════════════════════════════════════════════════════════════════════════════════════════╝"
     echo ""
 }
 
 print_summary() {
-    echo "┌─────────────────────────────────────────────────────────────────────────┐"
-    echo "│ Summary                                                                 │"
-    echo "├─────────────────────────────────────────────────────────────────────────┤"
+    echo "┌─────────────────────────────────────────────────────────────────────────────────────────┐"
+    echo "│ Summary                                                                                 │"
+    echo "├─────────────────────────────────────────────────────────────────────────────────────────┤"
 
     if [[ -f "$LOG_FILE" ]]; then
         SUBMITTED=$(grep -c 'Submitted process' "$LOG_FILE" 2>/dev/null || echo 0)
@@ -51,23 +51,23 @@ print_summary() {
         FAILED=$(grep -c 'FAILED' "$LOG_FILE" 2>/dev/null || echo 0)
         CACHED=$(grep -c 'CACHED' "$LOG_FILE" 2>/dev/null || echo 0)
 
-        printf "│  Submitted: %-8s  Completed: %-8s  Cached: %-8s  Failed: %-5s │\n" \
+        printf "│  Submitted: %-10s  Completed: %-10s  Cached: %-10s  Failed: %-10s │\n" \
             "$SUBMITTED" "$COMPLETED" "$CACHED" "$FAILED"
     else
-        echo "│  No log file found (.nextflow.log)                                     │"
+        printf "│  %-86s │\n" "No log file found (.nextflow.log)"
     fi
-    echo "└─────────────────────────────────────────────────────────────────────────┘"
+    echo "└─────────────────────────────────────────────────────────────────────────────────────────┘"
     echo ""
 }
 
 print_progress_bars() {
-    echo "┌─────────────────────────────────────────────────────────────────────────┐"
-    echo "│ Progress by Process                                                     │"
-    echo "├─────────────────────────────────────────────────────────────────────────┤"
+    echo "┌─────────────────────────────────────────────────────────────────────────────────────────┐"
+    echo "│ Progress by Process                                                                     │"
+    echo "├─────────────────────────────────────────────────────────────────────────────────────────┤"
 
     if [[ ! -f "$LOG_FILE" ]]; then
-        echo "│  Waiting for pipeline to start...                                      │"
-        echo "└─────────────────────────────────────────────────────────────────────────┘"
+        printf "│  %-86s │\n" "Waiting for pipeline to start..."
+        echo "└─────────────────────────────────────────────────────────────────────────────────────────┘"
         return
     fi
 
@@ -106,75 +106,76 @@ print_progress_bars() {
             for (i = 0; i < filled; i++) bar = bar "█"
             for (i = filled; i < 25; i++) bar = bar "░"
 
-            # Truncate long process names
+            # Show full process name (up to 42 chars to fit box with counts)
             display_proc = proc
-            if (length(proc) > 30) {
-                display_proc = substr(proc, 1, 27) "..."
+            if (length(proc) > 42) {
+                display_proc = substr(proc, 1, 39) "..."
             }
 
-            printf "│  %-30s [%s] %3d%% (%d/%d)\n", display_proc, bar, pct, c, total
+            # Format: │  name [bar] pct% (n/t)  │  = 91 chars total
+            printf "│  %-42s [%s] %3d%% (%d/%d)\n", display_proc, bar, pct, c, total
         }
     }' | sort
 
-    echo "└─────────────────────────────────────────────────────────────────────────┘"
+    echo "└─────────────────────────────────────────────────────────────────────────────────────────┘"
     echo ""
 }
 
 print_running() {
-    echo "┌─────────────────────────────────────────────────────────────────────────┐"
-    echo "│ Currently Running                                                       │"
-    echo "├─────────────────────────────────────────────────────────────────────────┤"
+    echo "┌─────────────────────────────────────────────────────────────────────────────────────────┐"
+    echo "│ Currently Running                                                                       │"
+    echo "├─────────────────────────────────────────────────────────────────────────────────────────┤"
 
     if [[ -f "$TRACE_FILE" ]]; then
         RUNNING=$(tail -n +2 "$TRACE_FILE" 2>/dev/null | awk -F'\t' '$4=="-" || $4=="RUNNING" {print $3}' | head -5)
         if [[ -n "$RUNNING" ]]; then
             echo "$RUNNING" | while read -r task; do
-                printf "│  %-71s │\n" "$task"
+                printf "│  %-86s │\n" "$task"
             done
         else
-            echo "│  None                                                                   │"
+            printf "│  %-86s │\n" "None (pipeline may be between tasks or waiting for resources)"
         fi
     else
-        echo "│  Trace file not available yet                                           │"
+        printf "│  %-86s │\n" "Trace file not available yet"
     fi
 
-    echo "└─────────────────────────────────────────────────────────────────────────┘"
+    echo "└─────────────────────────────────────────────────────────────────────────────────────────┘"
     echo ""
 }
 
 print_recent() {
-    echo "┌─────────────────────────────────────────────────────────────────────────┐"
-    echo "│ Recent Activity                                                         │"
-    echo "├─────────────────────────────────────────────────────────────────────────┤"
+    echo "┌─────────────────────────────────────────────────────────────────────────────────────────┐"
+    echo "│ Recent Activity                                                                         │"
+    echo "├─────────────────────────────────────────────────────────────────────────────────────────┤"
 
     if [[ -f "$LOG_FILE" ]]; then
         tail -50 "$LOG_FILE" 2>/dev/null | grep -E "(Submitted|COMPLETED|FAILED|CACHED)" | tail -5 | \
         while read -r line; do
             # Extract just the process name and status
-            short=$(echo "$line" | sed 's/.*\[\([^]]*\)\].*/\1/' | cut -c1-68)
-            printf "│  %-71s │\n" "$short"
+            short=$(echo "$line" | sed 's/.*\[\([^]]*\)\].*/\1/' | cut -c1-83)
+            printf "│  %-86s │\n" "$short"
         done
     else
-        echo "│  No activity yet                                                        │"
+        printf "│  %-86s │\n" "No activity yet"
     fi
 
-    echo "└─────────────────────────────────────────────────────────────────────────┘"
+    echo "└─────────────────────────────────────────────────────────────────────────────────────────┘"
     echo ""
 }
 
 print_errors() {
     if [[ -f "$LOG_FILE" ]] && grep -q "FAILED\|ERROR" "$LOG_FILE" 2>/dev/null; then
-        echo "┌─────────────────────────────────────────────────────────────────────────┐"
-        echo "│ ⚠️  Errors                                                               │"
-        echo "├─────────────────────────────────────────────────────────────────────────┤"
+        echo "┌─────────────────────────────────────────────────────────────────────────────────────────┐"
+        echo "│ Errors                                                                                  │"
+        echo "├─────────────────────────────────────────────────────────────────────────────────────────┤"
 
         grep -E "FAILED|ERROR" "$LOG_FILE" 2>/dev/null | tail -3 | \
         while read -r line; do
-            short=$(echo "$line" | cut -c1-71)
-            printf "│  %-71s │\n" "$short"
+            short=$(echo "$line" | cut -c1-83)
+            printf "│  %-86s │\n" "$short"
         done
 
-        echo "└─────────────────────────────────────────────────────────────────────────┘"
+        echo "└─────────────────────────────────────────────────────────────────────────────────────────┘"
         echo ""
     fi
 }
