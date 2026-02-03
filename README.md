@@ -58,7 +58,7 @@ nextflow -version
 nextflow run main.nf --taxon "Streptomyces coelicolor"
 
 # Run with clustering
-nextflow run main.nf --taxon "Pantoea"
+nextflow run main.nf --taxon "Pantoea" --clustering bigscape
 
 # Resume a previous run
 nextflow run main.nf -resume
@@ -225,7 +225,7 @@ For SLURM clusters:
 nextflow run main.nf -profile slurm --taxon "Streptomyces"
 
 # Via sbatch
-sbatch submit_slurm.sh "Streptomyces"
+sbatch submit_slurm.sh "Streptomyces" bigscape
 ```
 
 The SLURM profile automatically allocates appropriate resources:
@@ -251,6 +251,10 @@ If you use BGC-LOOM in your research, please cite:
 - **BiG-SCAPE**: Navarro-Muñoz et al. (2020) Nature Chemical Biology
 - **BiG-SLiCE**: Kautsar et al. (2021) GigaScience
 - **GTDB-Tk**: Chaumeil et al. (2022) Bioinformatics
+
+## Acknowledgments
+
+This pipeline was developed with assistance from [Claude](https://claude.ai), an AI assistant by Anthropic, using [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
 
 ## License
 
