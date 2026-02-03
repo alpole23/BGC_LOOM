@@ -42,7 +42,7 @@ cd ClusterQuest
 
 ```bash
 # Create conda environment with Nextflow
-conda create -n nextflow -c conda-forge nextflow
+conda create -n nextflow -c bioconda nextflow
 conda activate nextflow
 
 # Verify installation
