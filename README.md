@@ -1,11 +1,11 @@
-# BGC-LOOM
+# ClusterQuest
 
-**Large-scale Organization Of secondary Metabolites**
+**Large-scale Organization of Secondary Metabolites**
 
 [![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A523.04-brightgreen.svg)](https://www.nextflow.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-BGC-LOOM is a Nextflow pipeline for comprehensive analysis of biosynthetic gene clusters (BGCs) in bacterial genomes. It weaves together genome retrieval, BGC detection, clustering, and phylogenetic analysis into an integrated workflow with interactive visualization.
+ClusterQuest is a Nextflow pipeline for comprehensive analysis of biosynthetic gene clusters (BGCs) in bacterial genomes. It integrates genome retrieval, BGC detection, clustering, and phylogenetic analysis into an integrated workflow with interactive visualization.
 
 ![Pipeline Overview](docs/pipeline_overview.png)
 
@@ -24,8 +24,8 @@ BGC-LOOM is a Nextflow pipeline for comprehensive analysis of biosynthetic gene 
 ### Option 1: Clone with Git (recommended)
 
 ```bash
-git clone https://github.com/alpole23/bgc-loom.git
-cd bgc-loom
+git clone https://github.com/alpole23/ClusterQuest.git
+cd ClusterQuest
 ```
 
 ### Option 2: Download ZIP
@@ -34,8 +34,8 @@ cd bgc-loom
 2. Select **Download ZIP**
 3. Extract and enter the directory:
    ```bash
-   unzip bgc-loom-main.zip
-   cd bgc-loom-main
+   unzip ClusterQuest-main.zip
+   cd ClusterQuest-main
    ```
 
 ### Setup Environment
@@ -99,51 +99,6 @@ The SLURM profile automatically allocates:
 - 16+ GB RAM (128 GB for GTDB-Tk)
 - ~200 GB disk space for databases
 
-## Pipeline Overview
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              BGC-LOOM Pipeline                              │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   ┌─────────────────┐                                                       │
-│   │ DOWNLOAD_GENOMES│  Download bacterial genomes from NCBI                 │
-│   │  • NCBI Datasets │  Extract taxonomy information                        │
-│   │  • Rename/standardize                                                   │
-│   └────────┬────────┘                                                       │
-│            │                                                                │
-│            ▼                                                                │
-│   ┌─────────────────┐                                                       │
-│   │ ANTISMASH       │  Detect biosynthetic gene clusters                    │
-│   │  • BGC detection │  Compare against MIBiG known clusters               │
-│   │  • Domain analysis                                                      │
-│   │  • Result reuse ◄── Reuse from previous taxon run                      │
-│   └────────┬────────┘                                                       │
-│            │                                                                │
-│            ▼                                                                │
-│   ┌─────────────────┐                                                       │
-│   │ CLUSTERING      │  Group BGCs into gene cluster families                │
-│   │  • BiG-SCAPE    │  Network-based sequence similarity                   │
-│   │  • BiG-SLiCE    │  ML-based feature clustering                         │
-│   └────────┬────────┘                                                       │
-│            │                                                                │
-│            ▼                                                                │
-│   ┌─────────────────┐                                                       │
-│   │ PHYLOGENY       │  Phylogenetic placement of genomes                    │
-│   │  • GTDB-Tk      │  Bacterial reference tree                            │
-│   │  • Result reuse ◄── Filter/prune from previous run                     │
-│   └────────┬────────┘                                                       │
-│            │                                                                │
-│            ▼                                                                │
-│   ┌─────────────────┐                                                       │
-│   │ VISUALIZATION   │  Interactive HTML report                              │
-│   │  • BGC overview  │  Taxonomy distribution                               │
-│   │  • GCF heatmaps │  Gene diagrams                                        │
-│   └─────────────────┘                                                       │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
 ## Parameters
 
 ### Global
@@ -178,7 +133,7 @@ The SLURM profile automatically allocates:
 | `--gtdbtk_bgc_genomes_only` | `true` | Only analyze genomes with BGCs |
 | `--reuse_gtdbtk_from` | - | Reuse results from previous taxon |
 
-See [nextflow.config](nextflow.config) for all parameters.
+See the [Parameters Reference](docs/parameters.md) for the full list of configurable and non-configurable parameters, or browse [`nextflow.config`](nextflow.config) directly.
 
 ## Output Structure
 
@@ -202,55 +157,37 @@ results/
 
 ## Cross-Taxon Result Reuse
 
-When analyzing a taxon that's a subset of a previously analyzed taxon, BGC-LOOM can reuse existing results:
+When analyzing a taxon that's a subset of a previously analyzed taxon, ClusterQuest can reuse existing results:
 
 ```bash
 # First: analyze a broad taxon (e.g., family)
 nextflow run main.nf --taxon "Erwiniaceae"
 
-# Later: analyze a subset, reusing antiSMASH results
+# Later: analyze a subset, reusing antiSMASH and GTDB-Tk results
 nextflow run main.nf --taxon "Pantoea" \
     --reuse_antismash_from "Erwiniaceae" \
     --reuse_gtdbtk_from "Erwiniaceae"
 ```
 
-This avoids re-running antiSMASH on genomes that were already processed, saving significant compute time.
+This avoids re-running antiSMASH and GTDB-Tk on genomes that were already processed, saving significant compute time.
 
-## HPC Execution
+**Reuse behavior differs between antiSMASH and GTDB-Tk:**
 
-For SLURM clusters:
-
-```bash
-# Direct submission
-nextflow run main.nf -profile slurm --taxon "Streptomyces"
-
-# Via sbatch
-sbatch submit_slurm.sh "Streptomyces" bigscape
-```
-
-The SLURM profile automatically allocates appropriate resources:
-- antiSMASH: 4 CPUs, 8 GB RAM
-- BiG-SCAPE: 8 CPUs, 32-64 GB RAM
-- GTDB-Tk: 8 CPUs, 128 GB RAM (high-memory queue)
-
-## Monitoring Progress
-
-```bash
-# Check pipeline progress
-./check_progress.sh
-
-# Watch mode (auto-refresh)
-./check_progress.sh -w
-```
+- **antiSMASH reuse is per-genome and works in both directions.** Each genome is checked individually against the source taxon's results. Genomes found in the source are copied; missing genomes are run fresh. This means partial reuse works -- e.g., reusing "Pantoea" results when running "Erwiniaceae" will skip antiSMASH for Pantoea genomes and only run it on other genera.
+- **GTDB-Tk reuse requires superset to subset.** Because phylogenetic tree placement needs all genomes analyzed together, GTDB-Tk reuse only works when *all* current genomes exist in the source results (e.g., reuse "Erwiniaceae" for "Pantoea"). If any genomes are missing, the pipeline falls back to a full GTDB-Tk run. For example, reusing "Pantoea" for "Erwiniaceae" will not work because Erwiniaceae contains genera beyond Pantoea that were not previously analyzed.
 
 ## Citation
 
-If you use BGC-LOOM in your research, please cite:
+If you use ClusterQuest in your research, please cite:
 
 - **antiSMASH**: Blin et al. (2023) Nucleic Acids Research
 - **BiG-SCAPE**: Navarro-Muñoz et al. (2020) Nature Chemical Biology
 - **BiG-SLiCE**: Kautsar et al. (2021) GigaScience
 - **GTDB-Tk**: Chaumeil et al. (2022) Bioinformatics
+
+## Acknowledgments
+
+This pipeline was developed with assistance from [Claude](https://claude.ai), an AI assistant by Anthropic, using [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
 
 ## License
 
